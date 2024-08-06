@@ -143,7 +143,7 @@ class LineFollower(Controller):
 
     # TODO Part 4: Determine the speed that the RACECAR should drive at. This may be static or
     # variable depending on the programmer's intent.
-         speed = 1
+         speed = 0.7 - abs(rc_utils.remap_range(error, -320, 320, -0.3, 0.3))
       
       return (speed, angle)
    
@@ -152,5 +152,3 @@ class LineFollower(Controller):
    
    def get_area(self):
       return self.contour_area
-
-   

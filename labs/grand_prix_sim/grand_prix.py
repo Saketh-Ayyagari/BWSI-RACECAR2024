@@ -9,28 +9,7 @@ Title: Lab 6 - Wall Follower
 
 Author: [PLACEHOLDER] << [Write your name or team name here]
 
-Purpose: This script provides the RACECAR with the ability to autonomously follow a wall.
-The script should handle wall following for the right wall, the left wall, both walls, and
-be flexible enough to handle very narrow and very wide walls as well.
-
-Expected Outcome: When the user runs the script, the RACECAR should be fully autonomous
-and drive without the assistance of the user. The RACECAR drives according to the following
-rules:
-- The RACECAR detects a wall using the LIDAR sensor a certain distance and angle away.
-- Ideally, the RACECAR should be a set distance away from a wall, or if two walls are detected,
-should be in the center of the walls.
-- The RACECAR may have different states depending on if it sees only a right wall, only a 
-left wall, or both walls.
-- Both speed and angle parameters are variable and recalcualted every frame. The speed and angle
-values are sent once at the end of the update() function.
-
-Note: This file consists of bare-bones skeleton code, which is the bare minimum to run a 
-Python file in the RACECAR sim. Less help will be provided from here on out, since you've made
-it this far. Good luck, and remember to contact an instructor if you have any questions!
-
-Environment: Test your code using the level "Neo Labs > Lab 6: Wall Follower".
-Use the "TAB" key to advance from checkpoint to checkpoint to practice each section before
-running through the race in "race mode" to do the full course. Lowest time wins!
+GRAND PRIX SIMULATOR CODE
 """
 
 ########################################################################################
@@ -61,10 +40,12 @@ global scans
 speed = 0
 angle = 0
 state = None
-Kp = 0; Ki = 0; Kd = 0 
+Kp = 0; Ki = 0; Kd = 0
+# FOR I and D parts 
 int_sum = 0
-
 prevError = None
+# Detecting AR ID Markers
+ar_id = None
 
 class State(IntEnum):
     L = 0 # Only left wall is visible
@@ -78,9 +59,12 @@ SQRT = math.sqrt; ABS = abs; RAD = math.radians; DEG = math.degrees
 # Functions
 ########################################################################################
 def camera():
+    global ar_id
     image = rc.camera.get_color_image()
     ar_markers = rc_utils.get_ar_markers(image)
 
+    if len(ar_markers) > 0:
+        ar_id = ar_markers[0].get_id()
     rc_utils.draw_ar_markers(image, ar_markers)
 
     rc.display.show_color_image(image)
@@ -90,6 +74,7 @@ def camera():
 def start():
     global speed, angle
     global Kp, Ki, Kd
+    
     speed = 0
     angle = 0
     
@@ -100,7 +85,7 @@ def start():
 
     Kp = 0.035
     Ki = 0#.003125
-    Kd = 0#.001
+    Kd = 0.0013
     rc.drive.stop()
 
 # [FUNCTION] After start() is run, this function is run once every frame (ideally at
@@ -116,6 +101,8 @@ def update():
     global P_error, D_error
     global int_sum
     global prevError
+
+    global ar_id
     
     camera()
 
@@ -139,12 +126,15 @@ def update():
     
     if left != 0 and right != 0:
         state = State.LandR
-    elif left != 0:
-        state = State.L
     elif right != 0:
         state = State.R
+    elif left != 0:
+        state = State.L
+
+    if ar_id == 2:
+        state = State.R
     
-    SETPOINT = 60
+    SETPOINT = 100
     D_error = 0
     
     if state == State.L:
@@ -185,10 +175,13 @@ def update_slow():
     global error_log
     global scans, error
     global P_error, D_error
+    global ar_id
+
     print(f"State: {state}")
     print(f"Error: {error} | Angle: {angle}")
     print(f"Left: {left} | Right: {right}")
     print(f"P-error: {P_error} | D-error: {D_error}")
+    print(f"AR ID: {ar_id}")
     print('='*60)
 
 ########################################################################################
