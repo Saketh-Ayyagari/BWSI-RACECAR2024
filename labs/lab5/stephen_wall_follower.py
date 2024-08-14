@@ -31,7 +31,7 @@ import scipy
 ########################################################################################
 
 RC = racecar_core.create_racecar()
-RC.drive.set_max_speed(0.37)
+RC.drive.set_max_speed(0.5)
 
 ## Declare any global variables here
 # shorten math library names

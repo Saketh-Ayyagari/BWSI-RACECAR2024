@@ -19,7 +19,8 @@ the script.]
 # IMPORTS (BOTH CLASSES AND MODULES) #
 ###########
 import sys
-sys.path.insert(1, '../../library')
+sys.path.insert(1, '../../library') # inserts a path for finding modules
+import racecar_core
 import racecar_utils as rc_utils
 import numpy as np
 import math
@@ -37,23 +38,23 @@ SQRT = math.sqrt; ABS = abs; RAD = math.radians; DEG = math.degrees
 rc = None
 global speed, angle
 global Kp, Ki, Kd
-Kp = 0.00175
-Ki = 0
-Kd = 0.0009125
+Kp = 0.003125
+Ki = 0.003125
+Kd = 0.000925
 
 # Previous error for derivative
 prevError = None
-
+# cumulative error for integral
+sum = 0
 # The smallest contour we will recognize as a valid contour
 MIN_CONTOUR_AREA = 45
 
 
-
 # TODO Part 1: Determine the HSV color threshold pairs for BLUE, GREEN, and RED
 
-BLUE = ((80, 50, 50), (120, 255, 255))  # The HSV range for the color blue
-GREEN = ((40, 50, 50), (80, 255, 255))  # The HSV range for the color green
-RED = ((0, 200, 200), (10, 255, 255))  # The HSV range for the color red
+BLUE = ((80, 100, 50), (120, 255, 255))  # The HSV range for the color blue
+GREEN = ((40, 75, 150), (80, 255, 255))  # The HSV range for the color green
+RED = ((0, 200, 215), (10, 255, 255))  # The HSV range for the color red
 
 WHITE = ((0, 60, 150), (179, 70, 255)) # The HSV range for the color white
 YELLOW = ((20, 0, 25), (40, 255, 255)) # The HSV range for the color yellow
@@ -72,9 +73,10 @@ COLOR_PRIORITY_ORANGE = (BLUE, GREEN, RED)
 COLOR_PRIORITY_BLACK = (GREEN, RED, BLUE)
 COLOR_PRIORITY_PINK = (GREEN, BLUE, RED)
 
-####################
-# CONTROLLER CLASS #
-####################
+
+########################################
+# CONTROLLER CLASS 
+########################################
 class LineFollower(Controller):
    def __init__(self, racecar):
       global rc
@@ -86,8 +88,8 @@ class LineFollower(Controller):
       angle = 0
       self.contour_center = None
       self.contour_area = 0
-      COLOR_PRIORITY = COLOR_PRIORITY_BLACK
-      CROP_FLOOR = ((330, 0), (rc.camera.get_height()-15, rc.camera.get_width())) # crop floor for line detection
+      COLOR_PRIORITY = (GREEN, BLUE, BLUE)
+      CROP_FLOOR = ((345, 0), (rc.camera.get_height()-20, rc.camera.get_width())) # crop floor for line detection
 
 
    def update_contour(self):
@@ -95,6 +97,14 @@ class LineFollower(Controller):
       global contour_center, contour_area
       global COLOR_PRIORITY, CROP_FLOOR
       image = rc.camera.get_color_image()
+      # # gets AR markers
+      # ar_markers = rc_utils.get_ar_markers(image)
+      # if len(ar_markers) > 0:
+      #    rc_utils.draw_ar_markers(image, ar_markers)
+      #    if (ar_markers[0].get_id() == 32):
+      #       rc.drive.set_max_speed(0.25)
+      #    else:
+      #       rc.drive.set_max_speed(0.47)
 
       # A crop window for the floor directly in front of the car
       
@@ -115,9 +125,9 @@ class LineFollower(Controller):
          desired_contour = rc_utils.get_largest_contour(contours, MIN_CONTOUR_AREA)       
          self.contour_center = rc_utils.get_contour_center(desired_contour)
          self.contour_area = cv.contourArea(desired_contour)
-         cv.circle(line_img, (self.contour_center[1], self.contour_center[0]), 4, (0, 255, 0), -1)
+         cv.circle(line_img, (self.contour_center[1], self.contour_center[0]), 4, (255, 255, 0), -1)
          cv.drawContours(line_img, [c for c in contours if cv.contourArea(c) > MIN_CONTOUR_AREA]
-                           , -1, (0, 255, 0), 2)
+                           , -1, (255, 255, 0), 2)
          
       
       image[CROP_FLOOR[0][0]:CROP_FLOOR[1][0], CROP_FLOOR[0][1]:CROP_FLOOR[1][1]] = line_img
@@ -133,17 +143,22 @@ class LineFollower(Controller):
       global COLOR_PRIORITY
       global Kp, Ki, Kd
       global prevError
+      global sum # for integral term
 
       self.update_contour()
 
       if self.contour_center is not None:
          error = (rc.camera.get_width() // 2) - self.contour_center[1]
          P = -Kp*error
-         angle = rc_utils.clamp(P, -1, 1)
+         D = 0
+         if prevError is not None:
+            D = Kd * ((error - prevError)/rc.get_delta_time())
+         
+         angle = rc_utils.clamp(P + D, -1, 1)
 
     # TODO Part 4: Determine the speed that the RACECAR should drive at. This may be static or
     # variable depending on the programmer's intent.
-         speed = 0.7 - abs(rc_utils.remap_range(error, -320, 320, -0.3, 0.3))
+         speed = 1 - abs(rc_utils.remap_range(error, -320, 320, -0.3, 0.3))
       
       return (speed, angle)
    

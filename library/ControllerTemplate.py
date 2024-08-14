@@ -3,13 +3,13 @@ MIT BWSI Autonomous RACECAR
 MIT License
 racecar-neo-prereq-labs
 
-File Name: template.py << [Modify with your own file name!]
+File Name: ControllerTemplate.py
 
 Title: Controller Class
 
-Author: [PLACEHOLDER] << [Write your name or team name here]
+Author: Sakth Ayyagari and Stephen Cai
 
-Purpose: [PLACEHOLDER] << [Write the purpose of the script here]
+Purpose: Basic Controller Class for organizing outputs such as Line, Lane, and Wall Following
 
 Expected Outcome: [PLACEHOLDER] << [Write what you expect will happen when you run
 the script.]
@@ -39,19 +39,32 @@ RC = None
 class Controller():
    def __init__(self, racecar):
       global rc
+      global speed, angle
       rc = racecar
+      speed = 0
+      angle = 0
 
    def update(self, current) -> tuple[float, float]: # returns the new speed and angle
       '''
       Takes in the RACECAR's state as a tuple (speed, angle) and returns a tuple (speed, angle) for this current frame's control output.
       '''
-      speed, angle = current
+      global speed, angle
+      
       return (speed, angle)
 
    def get_speed(self):
       global speed
       return speed
+   
    def get_angle(self):
       global angle
       return angle
+   
+   def clamp(self, value, low, high):
+      if value > high:
+         return high
+      elif value < low:
+         return low
+      else:
+         return value
    

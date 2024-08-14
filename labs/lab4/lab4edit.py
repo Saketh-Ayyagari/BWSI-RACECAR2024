@@ -54,7 +54,7 @@ import racecar_utils as rc_utils
 
 rc = racecar_core.create_racecar()
 
-rc.drive.set_max_speed(0.47)
+rc.drive.set_max_speed(0.35)
 
 # >> Constants
 # The smallest contour we will recognize as a valid contour
@@ -70,12 +70,6 @@ angle = 0.0  # The current angle of the car's wheels
 contour_center = None  # The (pixel row, pixel column) of contour
 contour_area = 0  # The area of contour
 
-# PID Constants
-errors = []
-Kp = 0.002125
-Ki = 0
-Kd = 0.001
-integral_sum = 0
 
 line_follower = LineFollower(rc)
 

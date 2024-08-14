@@ -1,19 +1,12 @@
 """
-MIT BWSI Autonomous RACECAR
-MIT License
-racecar-neo-prereq-labs
-
-File Name: template.py << [Modify with your own file name!]
+This program does a simple SLAM 
 """
 
-########################################################################################
-# Imports
-########################################################################################
-
-import sys
 import numpy as np
-import matplotlib.pyplot as plt
 import cv2 as cv
+import sys
+import math
+import matplotlib.pyplot as plt
 
 # If this file is nested inside a folder in the labs folder, the relative path should
 # be [1, ../../library] instead.
@@ -21,83 +14,72 @@ sys.path.insert(1, '../../library')
 import racecar_core
 import racecar_utils as rc_utils
 
+
 ########################################################################################
 # Global variables
 ########################################################################################
-
 rc = racecar_core.create_racecar()
 
-# Declare any global variables here
-speed = 0; angle = 0
-
-########################################################################################
-# Functions
-########################################################################################
-
-
-matrix_default = np.array([[0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
-                            [0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
-                            [0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
-                            [0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
-                            [0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
-                            [0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
-                            [0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
-                            [0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.]
-                            ])
-'''
-Dot matrix methods
-'''
-def straight_arrow():
-    m = np.copy(matrix_default)
-    m[3:-2, 0:22] = 1
-    m[4:6, 22] = 1
-    m[:, -8:-6] = 1
-    m[-6, 1] = 1; m[-6, -2] = 1
-    return m
-def right_angle_left():
-    m = np.copy(matrix_default)
-    m[4:, :-4] = 1
-    m[:, -8:-5] = 1
-    m[0:3, -8] = 1; m[0:3, -4]
-    m[1:3, -9] = 1; m[1:3, -3] = 1;
-    m[-2, 2] = 1; m[-10, 2] = 1
-    return m
-def right_angle_right():
-    m = right_angle_left()
-    m = np.flipud(m)
-    return m
-        
+rad_to_degrees = math.degrees
+degrees_to_rad = math.radians
+floor = math.floor
+# trig functions are in radians
+cos = math.cos
+sin = math.sin
+π = math.pi
+global speed, angle
+CAR_POSITION = (rc.camera.get_height()//2, rc.camera.get_width()//2)
 
 
-# [FUNCTION] The start function is run once every time the start button is pressed
+def update_point_map():
+   global scans
+   scans = rc.lidar.get_samples()
+   image = rc.camera.get_color_image()
+
+   rc_utils.draw_circle(image, CAR_POSITION, (0, 0, 255))
+   for a in range(360):
+      distance = rc_utils.get_lidar_average_distance(scans, a)
+
+      if distance > 0:
+         # using sin and cos to break up the distance into components
+         vertical_distance = distance*cos(degrees_to_rad(a))
+         horizontal_distance = distance*sin(degrees_to_rad(a))
+         # plotting each point of the lidar map
+         point = (CAR_POSITION[0] - rc_utils.clamp(floor(vertical_distance*0.3), -CAR_POSITION[0]+1, CAR_POSITION[0]), 
+                  CAR_POSITION[1] + rc_utils.clamp(floor(horizontal_distance*0.3), -CAR_POSITION[1], CAR_POSITION[1]-1))
+         rc_utils.draw_circle(image, point, (0, 255, 0), radius=3)
+         
+   rc.display.show_color_image(image)
+
 def start():
+   global speed, angle
    speed = 0
    angle = 0
+
    rc.drive.stop()
 
-# [FUNCTION] After start() is run, this function is run once every frame (ideally at
-# 60 frames per second or slower depending on processing speed) until the back button
-# is pressed  
 def update():
-    scans = rc.lidar.get_samples()
-    print(f"Distance in front of car: {rc_utils.get_lidar_average_distance(scans, 0)}")
-    print(f"Distance to right of car: {rc_utils.get_lidar_average_distance(scans, 90)}")
-    print(f"Distance to left of car: {rc_utils.get_lidar_average_distance(scans, 270)}")
-    print(f"=========================================")
+   global speed, angle
+   global scans
+   update_point_map()
 
-    
+   right = rc.controller.get_trigger(rc.controller.Trigger.RIGHT)
+   left = rc.controller.get_trigger(rc.controller.Trigger.LEFT)
+   if right > 0:
+      speed = right
+   elif left > 0:
+      speed = -left
+   else:
+      speed = 0
 
-# [FUNCTION] update_slow() is similar to update() but is called once per second by
-# default. It is especially useful for printing debug messages, since printing a 
-# message every frame in update is computationally expensive and creates clutter
-def update_slow():
-    pass 
+   angle, __ = rc.controller.get_joystick(rc.controller.Joystick.LEFT)
 
 
-########################################################################################
-# DO NOT MODIFY: Register start and update and begin execution
-########################################################################################
+   # Send the speed and angle values to the RACECAR
+   rc.drive.set_speed_angle(speed, angle)
 
-if __name__ == "__main__":
-    rc.set_start_update(start, update, update_slow)
-    rc.go()
+
+
+if __name__ == '__main__':
+   rc.set_start_update(start, update)
+   rc.go()
