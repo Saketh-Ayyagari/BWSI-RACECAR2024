@@ -54,7 +54,6 @@ from enum import IntEnum
 ########################################################################################
 
 rc = racecar_core.create_racecar()
-rc.drive.set_max_speed(0.5)
 # Declare any global variables here
 global speed, angle, state
 global scans
@@ -94,13 +93,16 @@ def start():
     angle = 0
     
     # NOTE: PID Values for default speed (~1 m/s)
-    # Kp = 0.071
-    # Ki = 0
-    # Kd = 0.00083
+    Kp = 0.04225
+    Ki = 0.
+    Kd = 0.00035
 
-    Kp = 0.035
-    Ki = 0#.003125
-    Kd = 0#.001
+    # # Coefficients for bang-bang control
+    # Kp = 1
+    # Ki = 0
+    # Kd = 0
+
+    
     rc.drive.stop()
 
 # [FUNCTION] After start() is run, this function is run once every frame (ideally at
@@ -117,15 +119,17 @@ def update():
     global int_sum
     global prevError
     
-    camera()
+    #camera()
 
-    speed = 0.75
+    speed = 1
     scans = rc.lidar.get_samples()
     '''
     ALWAYS USE LOOK AHEAD TO COMPENSATE FOR LAG. NO SYSTEM IS GOING TO BE PERFECT!!!!!!!!!!
     '''
-    left = rc_utils.get_lidar_closest_point(scans, (290, 305))[1]
-    right = rc_utils.get_lidar_closest_point(scans, (55, 70))[1]
+    left = rc_utils.get_lidar_closest_point(scans, (290, 315))[1]
+    right = rc_utils.get_lidar_closest_point(scans, (45, 90))[1]
+    # left = rc_utils.get_lidar_average_distance(scans, 45, 5)
+    # right = rc_utils.get_lidar_average_distance(scans, 315, 5)
 
 
     # if rc.controller.get_trigger(rc.controller.Trigger.RIGHT) > 0:
@@ -137,11 +141,11 @@ def update():
       
     # (angle, y) = rc.controller.get_joystick(rc.controller.Joystick.LEFT)
     
-    if left != 0 and right != 0:
+    if left < 300 and right < 300:
         state = State.LandR
-    elif left != 0:
+    elif left < 300:
         state = State.L
-    elif right != 0:
+    elif right < 300:
         state = State.R
     
     SETPOINT = 60
@@ -156,15 +160,14 @@ def update():
         P_error = -Kp*error
     
     elif state == State.LandR:
-        setpoint = (left + right)/2
-        error = setpoint - left
-        P_error = Kp*error
+        error = left - right
+        P_error = -Kp*error
     # calculating integral error
     int_sum+=(rc.get_delta_time() * error)
-    I_error = Ki*int_sum
+    I_error = -Ki*int_sum
     # calculating derivative error
     if prevError is not None:
-        D_error = Kd*(error-prevError/rc.get_delta_time())
+        D_error = -Kd*(error-prevError/rc.get_delta_time())
         
     angle = rc_utils.clamp(P_error + I_error + D_error, -1, 1)
     

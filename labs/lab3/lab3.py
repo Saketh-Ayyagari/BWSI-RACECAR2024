@@ -124,7 +124,7 @@ def update_contour():
             contour_center = rc_utils.get_contour_center(max_contour)
             contour_area = cv.contourArea(max_contour)
 
-            cv.drawContours(image, [max_contour], 0, (255, 255, 0), 3)
+            cv.drawContours(image, [max_contour], -1, (255, 255, 0), 3)
             # TODO Part 3: Repeat the search for all potential traffic light colors,
             # then select the correct color of traffic light detected.
             hue = hsv[contour_center[0]][contour_center[1]][0]

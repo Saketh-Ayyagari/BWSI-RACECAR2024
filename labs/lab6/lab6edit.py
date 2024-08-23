@@ -134,7 +134,8 @@ def update_slow():
     global error_log
     global scans, error
     global P_error, D_error
-    print(f"Angle between wall relative to RACECAR: {wall_follower.print_error()}")
+    print(f"Angle between left wall relative to RACECAR: {wall_follower.print_left_error()}")
+    print(f"Angle between right wall relative to RACECAR: {wall_follower.print_right_error()}")
     print(f"(Speed, Angle): ({wall_follower.get_speed()}, {wall_follower.get_angle()})")
     print("="*75)
 

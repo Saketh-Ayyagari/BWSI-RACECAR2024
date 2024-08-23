@@ -40,7 +40,7 @@ global speed, angle
 global Kp, Ki, Kd
 Kp = 0.003125
 Ki = 0.003125
-Kd = 0.000925
+Kd = 0.003#0925
 
 # Previous error for derivative
 prevError = None
@@ -54,7 +54,7 @@ MIN_CONTOUR_AREA = 45
 
 BLUE = ((80, 100, 50), (120, 255, 255))  # The HSV range for the color blue
 GREEN = ((40, 75, 150), (80, 255, 255))  # The HSV range for the color green
-RED = ((0, 200, 215), (10, 255, 255))  # The HSV range for the color red
+RED = ((0, 50, 50), (10, 255, 255))  # The HSV range for the color red
 
 WHITE = ((0, 60, 150), (179, 70, 255)) # The HSV range for the color white
 YELLOW = ((20, 0, 25), (40, 255, 255)) # The HSV range for the color yellow
@@ -88,7 +88,7 @@ class LineFollower(Controller):
       angle = 0
       self.contour_center = None
       self.contour_area = 0
-      COLOR_PRIORITY = (GREEN, BLUE, BLUE)
+      COLOR_PRIORITY = (RED, GREEN, BLUE)
       CROP_FLOOR = ((345, 0), (rc.camera.get_height()-20, rc.camera.get_width())) # crop floor for line detection
 
 
@@ -152,7 +152,7 @@ class LineFollower(Controller):
          P = -Kp*error
          D = 0
          if prevError is not None:
-            D = Kd * ((error - prevError)/rc.get_delta_time())
+            D = -Kd * ((error - prevError)/rc.get_delta_time())
          
          angle = rc_utils.clamp(P + D, -1, 1)
 
