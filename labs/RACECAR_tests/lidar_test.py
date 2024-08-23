@@ -51,6 +51,26 @@ def update_point_map():
          
    rc.display.show_color_image(image)
 
+def generate_map():
+   graph = np.zeros((480, 640, 3)) # in RGB format
+   graph[CAR_POSITION[0]][CAR_POSITION[1]] = np.array([255, 0, 0])
+   scans = rc.lidar.get_samples()
+
+   for a in range(360):
+      distance = rc_utils.get_lidar_average_distance(scans, a)
+
+      if distance > 0:
+         # using sin and cos to break up the distance into components
+         vertical_distance = distance*cos(degrees_to_rad(a))
+         horizontal_distance = distance*sin(degrees_to_rad(a))
+         # plotting each point of the lidar map
+         point = (CAR_POSITION[0] - rc_utils.clamp(floor(vertical_distance*0.3), -CAR_POSITION[0]+1, CAR_POSITION[0]), 
+                  CAR_POSITION[1] + rc_utils.clamp(floor(horizontal_distance*0.3), -CAR_POSITION[1], CAR_POSITION[1]-1))
+         
+
+   plt.imshow(graph)
+   plt.show()
+
 def start():
    global speed, angle
    speed = 0

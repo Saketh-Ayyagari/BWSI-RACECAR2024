@@ -54,7 +54,7 @@ import racecar_utils as rc_utils
 
 rc = racecar_core.create_racecar()
 
-rc.drive.set_max_speed(0.35)
+rc.drive.set_max_speed(0.4)
 
 # >> Constants
 # The smallest contour we will recognize as a valid contour

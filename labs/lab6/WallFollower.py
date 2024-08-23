@@ -36,7 +36,7 @@ rad_to_degrees = DEG
 # Constants
 RC = None
 speed, angle = 0, 0
-Kp = 0.0325
+Kp = 0.03125
 Ki = 0
 Kd = 0
 
@@ -48,9 +48,12 @@ class WallFollower():
       global rc
       global speed, angle
       global Kp, Ki, Kd
+      global d1, d2
       rc = racecar
       speed = 0
       angle = 0
+      self.left_error = 0
+      self.right_error = 0
 
    def get_angle_with_wall(self, scans, lidar_range):
       theta1, theta2 = lidar_range
@@ -63,7 +66,7 @@ class WallFollower():
          d1 = rc_utils.get_lidar_average_distance(scans, theta1)
          d2 = rc_utils.get_lidar_average_distance(scans, theta2)
 
-      # if 
+      
       if d1 == 0 or d2 == 0:
          return 0
       
@@ -87,7 +90,13 @@ class WallFollower():
    
       scans = rc.lidar.get_samples()
       # finding angle
-      error = self.get_angle_with_wall(scans, (45, 90)) + self.get_angle_with_wall(scans, (270, 315))
+      OFFSET = 40
+      self.left_error = self.get_angle_with_wall(scans, (270, 270+OFFSET))
+      self.right_error = self.get_angle_with_wall(scans, (90-OFFSET, 90))
+      if abs(self.left_error) > abs(self.right_error):
+         error = self.left_error
+      else:
+         error = self.right_error
       
       if rc.controller.get_trigger(rc.controller.Trigger.RIGHT) > 0:
          speed = 1
@@ -108,7 +117,10 @@ class WallFollower():
       global angle
       return angle
    
-   def print_error(self):
-      global error
-      return error
+   def print_left_error(self):
+      return self.left_error
+   def print_right_error(self):
+      return self.right_error
+   
+
    
