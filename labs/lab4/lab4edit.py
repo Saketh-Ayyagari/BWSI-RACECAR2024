@@ -54,7 +54,6 @@ import racecar_utils as rc_utils
 
 rc = racecar_core.create_racecar()
 
-rc.drive.set_max_speed(0.4)
 
 # >> Constants
 # The smallest contour we will recognize as a valid contour
@@ -119,9 +118,7 @@ def update():
     global integral_sum
     
     global errors
-    Kp = 0
-    Kd = 0
-    Ki = 0
+    
 
 
     # line_follower.update() chooses an angle based on contour_center
@@ -153,6 +150,7 @@ def update():
 # message every frame in update is computationally expensive and creates clutter
 def update_slow():
     global contour_center, contour_area
+    global angle
     """
     After start() is run, this function is run at a constant rate that is slower
     than update().  By default, update_slow() is run once per second
@@ -171,6 +169,10 @@ def update_slow():
             s = ["-"] * 32
             s[int(contour_center[1] / 20)] = "|"
             print("".join(s) + " : area = " + str(contour_area))
+    print(f"Proportional Error: {line_follower.get_P_error()}")
+    print(F"Integral Error: {line_follower.get_I_error()}")
+    print(f"Derivative Error: {line_follower.get_D_error()}")
+    print(f"Corrected angle: {angle}")
 
 ########################################################################################
 # DO NOT MODIFY: Register start and update and begin execution
